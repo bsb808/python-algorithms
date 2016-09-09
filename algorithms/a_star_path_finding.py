@@ -1,4 +1,9 @@
 import heapq
+from math import *
+from time import sleep
+
+import astar_utils as autils
+reload(autils)
 
 
 class Cell(object):
@@ -11,6 +16,7 @@ class Cell(object):
         @param g cost to move from the starting cell to this cell.
         @param h estimation of the cost to move from this cell
                  to the ending cell.
+        @param c cost of moving from adjacent cell to this cell - nom =1.0
         @param f f = g + h
         """
         self.reachable = reachable
@@ -20,6 +26,7 @@ class Cell(object):
         self.g = 0
         self.h = 0
         self.f = 0
+        self.c = 1.0
 
 
 class AStar(object):
@@ -58,11 +65,13 @@ class AStar(object):
     def get_heuristic(self, cell):
         """Compute the heuristic value H for a cell.
 
-        Distance between this cell and the ending cell multiply by 10.
+        Distance between this cell and the ending cell
 
         @returns heuristic value H
         """
-        return 10 * (abs(cell.x - self.end.x) + abs(cell.y - self.end.y))
+        #return 10 * (abs(cell.x - self.end.x) + abs(cell.y - self.end.y))
+        return sqrt((cell.x-self.end.x)**2 + (cell.y-self.end.y)** 2)
+
 
     def get_cell(self, x, y):
         """Returns a cell from the cells list.
@@ -73,6 +82,19 @@ class AStar(object):
         """
         return self.cells[x * self.grid_height + y]
 
+    def get_surrounding_cells(self,cell):
+        cells = self.get_adjacent_cells(cell)
+        if cell.x < self.grid_width-1:
+            if cell.y > 0:
+                cells.append(self.get_cell(cell.x+1,cell.y-1))
+            if cell.y < self.grid_height-1:
+                cells.append(self.get_cell(cell.x+1,cell.y+1))
+        if cell.x > 0:
+            if cell.y > 0:
+                cells.append(self.get_cell(cell.x-1,cell.y-1))
+            if cell.y < self.grid_height-1:
+                cells.append(self.get_cell(cell.x-1,cell.y+1))
+        return cells
     def get_adjacent_cells(self, cell):
         """Returns adjacent cells to a cell.
 
@@ -102,6 +124,21 @@ class AStar(object):
         path.append((self.start.x, self.start.y))
         path.reverse()
         return path
+    
+    def get_currentpath(self):
+        if len(self.opened):
+            f,cell = self.opened[0]
+        else:
+            cell = self.end
+        path = [(cell.x, cell.y)]
+        while cell.parent is not self.start:
+            cell = cell.parent
+            path.append((cell.x, cell.y))
+
+        path.append((self.start.x, self.start.y))
+        path.reverse()
+        return path
+
 
     def update_cell(self, adj, cell):
         """Update adjacent cell.
@@ -109,18 +146,19 @@ class AStar(object):
         @param adj adjacent cell to current cell
         @param cell current cell being processed
         """
-        adj.g = cell.g + 10
+        adj.g = cell.g + adj.c
         adj.h = self.get_heuristic(adj)
         adj.parent = cell
         adj.f = adj.h + adj.g
 
-    def solve(self):
+    def solve(self,animate=False):
         """Solve maze, find path to ending cell.
 
         @returns path or None if not found.
         """
         # add starting cell to open heap queue
         heapq.heappush(self.opened, (self.start.f, self.start))
+        cnt = 0
         while len(self.opened):
             # pop cell from heap queue
             f, cell = heapq.heappop(self.opened)
@@ -128,7 +166,7 @@ class AStar(object):
             self.closed.add(cell)
             # if ending cell, return found path
             if cell is self.end:
-                return self.get_path()
+                return (self.get_path(),cnt)
             # get adjacent cells for cell
             adj_cells = self.get_adjacent_cells(cell)
             for adj_cell in adj_cells:
@@ -143,3 +181,10 @@ class AStar(object):
                         self.update_cell(adj_cell, cell)
                         # add adj cell to open list
                         heapq.heappush(self.opened, (adj_cell.f, adj_cell))
+            if animate:
+                fname = ("anime/test%04d.png"%cnt)
+                autils.plotAstar(self,self.get_currentpath(),anime=animate,fname=fname)
+                #print cnt
+                #sleep(0.1)
+            cnt +=1
+        return (None, cnt)
