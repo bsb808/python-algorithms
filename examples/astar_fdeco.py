@@ -5,10 +5,16 @@ reload(pf)
 import astar_utils as autils
 reload(autils)
 
-# Size of space
-N = 21
+from subprocess import call
 
-W= 3  # should be odd
+close('all')
+
+movie=False
+
+# Size of space
+N = 201
+M =10 # multiplier
+W= 11#3  # should be odd
 Nc = 5  # number of blocks
 centers=[]
 orient=0.0
@@ -27,8 +33,10 @@ if False:
             print "wall start/end conflict"
 else:
     centers = [(7,5),(3,7),(10,11),(17,9),(16,15)]
+    centers.append((11.9,9.4))
+    centers.append((8.5,11))
     for c in centers:
-        sq = autils.make_square(c,W,orient)
+        sq = autils.make_square((c[0]*M,c[1]*M),W,orient)
         walls += sq
 
 
@@ -36,16 +44,18 @@ a = pf.AStar()
 a.init_grid(N,N, tuple(walls), start, end)
 
 # add cost around blocks
+
 for c in centers:
-    sq = autils.make_square(c,W,orient)
+    sq = autils.make_square((c[0]*M,c[1]*M),W,orient)
     added= []
     for s in sq:
         cell = a.get_cell(*s)            
         for adj in a.get_surrounding_cells(cell):
             if not adj in added:
                 added.append(adj)
-                adj.c += 1.0
+                adj.c += 2.0
 
+    # Add second layer
     for s in sq:
         cell = a.get_cell(*s)
         for adj in a.get_surrounding_cells(cell):
@@ -53,17 +63,57 @@ for c in centers:
                 for aadj in a.get_surrounding_cells(adj):
                     if not aadj in added:
                         added.append(aadj)
-                        aadj.c += 0.5
+                        aadj.c += 1.0
 
-path,cnt = a.solve(animate=True)
-fname = ("anime/test%04d.png"%cnt)
-autils.plotAstar(a,path,anime=True,fname=fname)
+    # Add third layer
+    for s in sq:
+        cell = a.get_cell(*s)
+        for adj in a.get_surrounding_cells(cell):
+            if adj.reachable:
+                for aadj in a.get_surrounding_cells(adj):
+                    for aaadj in a.get_surrounding_cells(aadj):
+                        if not aaadj in added:
+                            added.append(aaadj)
+                            aaadj.c += 0.5
 
-from subprocess import call
-ofname = fname
-for ii in range(40):
-    cnt+=1
-    fname = ("anime/test%04d.png"%cnt)
-    print 'cp %s to %s'%(ofname,fname)
-    call(['cp',ofname,fname])
+    # Add fourth layer
+    for s in sq:
+        cell = a.get_cell(*s)
+        for adj in a.get_surrounding_cells(cell):
+            if adj.reachable:
+                for aadj in a.get_surrounding_cells(adj):
+                    for aaadj in a.get_surrounding_cells(aadj):
+                        for aaaadj in a.get_surrounding_cells(aaadj):
+                            if not aaaadj in added:
+                                added.append(aaaadj)
+                                aaaadj.c += 0.25
+
+
+autils.plotAstar(a,None,anime=False,spline=False)
 show()
+NN=20
+path,cnt = a.solve(animate=movie)
+fname = ("anime/test%04d.png"%cnt)
+autils.plotAstar(a,path,anime=False,fname=fname,spline=False)
+# make some copies of the last image for the movie
+if movie:
+    ofname = fname
+    for ii in range(NN):
+        cnt+=1
+        fname = ("anime/test%04d.png"%cnt)
+        print 'cp %s to %s'%(ofname,fname)
+        call(['cp',ofname,fname])
+
+# Now add the spline and copy
+cnt+=1
+fname = ("anime/test%04d.png"%cnt)
+autils.plotAstar(a,path,anime=False,fname=fname,spline=True)
+if movie:
+    ofname = fname
+    for ii in range(NN):
+        cnt+=1
+        fname = ("anime/test%04d.png"%cnt)
+        print 'cp %s to %s'%(ofname,fname)
+        call(['cp',ofname,fname])
+else:
+    show()

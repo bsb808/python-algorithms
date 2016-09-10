@@ -1,8 +1,12 @@
 from pylab import *
+from scipy import interpolate 
 
-def plotAstar(astar,path,ax=None,anime=False,fname=None):
+def plotAstar(astar,path,ax=None,anime=False,fname=None,spline=False):
     if ax is None:
-        figure(1)
+        if anime:
+            figure(1)
+        else:
+            figure()
         clf()
         ax=subplot(111,aspect='equal')
 
@@ -60,7 +64,22 @@ def plotAstar(astar,path,ax=None,anime=False,fname=None):
         for p in path:
             xx.append(p[0])
             yy.append(p[1])
-            plot(xx,yy,'g',linewidth=5)
+        plot(xx,yy,'k--',linewidth=2)
+        # Spline fit
+        if spline:
+            # Parematerize
+            xx = array(xx)
+            yy = array(yy)
+            # add some weighting at the ends for exit/entry
+            w = ones(len(xx))
+            WL=2
+            w[0:WL]=10
+            w[-WL:]=10
+            tck,u = interpolate.splprep([xx,yy],w=w,s=200)#s=2)
+            unew = arange(0.0,1.01,0.01)
+            out = interpolate.splev(unew,tck)
+            plot(out[0],out[1],'g',linewidth=4,alpha=0.7)
+
     if fname is None:
         draw()
     else:
