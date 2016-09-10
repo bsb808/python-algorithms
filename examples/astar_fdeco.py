@@ -9,12 +9,12 @@ from subprocess import call
 
 close('all')
 
-movie=False
+movie=True
 
 # Size of space
-N = 201
-M =10 # multiplier
-W= 11#3  # should be odd
+N = 21#201
+M =1 # multiplier
+W= 1#11#3  # should be odd
 Nc = 5  # number of blocks
 centers=[]
 orient=0.0
@@ -32,9 +32,25 @@ if False:
         else:
             print "wall start/end conflict"
 else:
-    centers = [(7,5),(3,7),(10,11),(17,9),(16,15)]
-    centers.append((11.9,9.4))
-    centers.append((8.5,11))
+    #centers = [(7,5),(3,7),(10,11),(17,9),(16,15)]
+    #centers.append((11.9,9.4))
+    #centers.append((8.5,11))
+
+    centers = [(10,10),
+               (11,9),
+               (12,8),
+               (13,7),
+               (9,11),
+               (8,12),
+               (7,13),
+               (6,12),
+               (5,11),
+               (4,10),
+               (3,9),
+               (12,6),
+               (11,5),
+               (10,4),
+               (9,3)]
     for c in centers:
         sq = autils.make_square((c[0]*M,c[1]*M),W,orient)
         walls += sq
@@ -53,8 +69,8 @@ for c in centers:
         for adj in a.get_surrounding_cells(cell):
             if not adj in added:
                 added.append(adj)
-                adj.c += 2.0
-
+                adj.c += .2 #2.0
+                '''
     # Add second layer
     for s in sq:
         cell = a.get_cell(*s)
@@ -87,10 +103,11 @@ for c in centers:
                             if not aaaadj in added:
                                 added.append(aaaadj)
                                 aaaadj.c += 0.25
+'''
+if not movie:
+    autils.plotAstar(a,None,anime=False,spline=False)
+    show()
 
-
-autils.plotAstar(a,None,anime=False,spline=False)
-show()
 NN=20
 path,cnt = a.solve(animate=movie)
 fname = ("anime/test%04d.png"%cnt)

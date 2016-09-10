@@ -75,7 +75,7 @@ def plotAstar(astar,path,ax=None,anime=False,fname=None,spline=False):
             WL=2
             w[0:WL]=10
             w[-WL:]=10
-            tck,u = interpolate.splprep([xx,yy],w=w,s=200)#s=2)
+            tck,u = interpolate.splprep([xx,yy],w=w,s=2)#200)#s=2)
             unew = arange(0.0,1.01,0.01)
             out = interpolate.splev(unew,tck)
             plot(out[0],out[1],'g',linewidth=4,alpha=0.7)
